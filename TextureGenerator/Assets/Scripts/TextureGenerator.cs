@@ -1,78 +1,49 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Renderer))]
 public class TextureGenerator : MonoBehaviour
 {
-    [SerializeField] private Vector2 size;
-    [SerializeField] private float plankWidth = 1;
-    [SerializeField] private Vector2 plankLengthMinMax;
-    [SerializeField] private int seed;
-	[SerializeField] private Color[] cols;
-	[SerializeField] private Material material;
-	[SerializeField] private float noise;
-	[SerializeField] private bool autoUpdate;
-	
-	private Transform holder;
-	private bool needsUpdate;
+    [SerializeField] private int width = 256;
+    [SerializeField] private int height = 256;
 
-	private void Update()
-	{
-		if (needsUpdate && autoUpdate)
-		{
-			needsUpdate = false;
+    [SerializeField] private float scale = 20;
 
-			var o = Random.state;
-			Generate();
-			Random.state = o;
-		}
-	}
+    [SerializeField] private Color[] randomColors;
 
-	[ContextMenu("Generate texture")]
-	public void Generate()
-	{
-		if (transform.childCount > 0)
-		{
-			DestroyImmediate(transform.GetChild(0).gameObject);
-		}
-		Random.InitState(seed);
-		holder = new GameObject("Holder").transform;
-		holder.parent = transform;
-		float currX = transform.position.x - size.x / 2 + plankWidth / 2;
-		float startY = transform.position.z - size.y / 2;
-		float currY = startY;
-		float endY = transform.position.z + size.y / 2;
+    [ContextMenu("Generate texture")]
+    private void Generate()
+    {
+        Renderer m_render = GetComponent<Renderer>();
+        m_render.material.mainTexture = GenerateTexture();
+    }
 
-		while (currX < transform.position.x + size.x / 2 - 0.01f)
-		{
-			while (currY <= endY - 0.01f)
-			{
-				GameObject plank = GameObject.CreatePrimitive(PrimitiveType.Cube);
-				DestroyImmediate(plank.GetComponent<BoxCollider>());
-				plank.GetComponent<MeshRenderer>().sharedMaterial = new Material(material);
-				float r = (Random.value - 0.5f) * noise;
-				Color col = cols[Random.Range(0, cols.Length)] + new Color(r, r, r);
-				plank.GetComponent<MeshRenderer>().sharedMaterial.color = col;
-				plank.transform.parent = holder;
-				float length = Random.Range(plankLengthMinMax.x, plankLengthMinMax.y);
-				length = Mathf.Min(length, endY - currY);
+    private Texture GenerateTexture()
+    {
+        Texture2D m_texture = new Texture2D(width, height);
 
-				plank.transform.position = new Vector3(currX, 0, currY + length / 2);
-				plank.transform.localScale = new Vector3(plankWidth, 0.01f, length);
-				currY += length;
-			}
-			currX += plankWidth;
-			currY = startY;
-		}
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Color m_color = CalculateColor(x, y);
+                m_texture.SetPixel(x, y, m_color);
+            }
+        }
 
-	}
+        m_texture.Apply();
+        return m_texture;
+    }
 
-	private void OnValidate()
-	{
-		needsUpdate = true;
-	}
+    private Color CalculateColor(int x, int y)
+    {
+        float xCoord = (float)x / width * scale;
+        float yCoord = (float)y / height * scale;
 
-	private void OnDrawGizmos()
-	{
-		Gizmos.color = Color.green;
-		Gizmos.DrawWireCube(transform.position, new Vector3(size.x, 0, size.y));
-	}
+        float m_noise = Mathf.PerlinNoise(xCoord, yCoord);
+
+        float m_random = (Random.value - 0.5f) * m_noise;
+        Color m_color = randomColors[Random.Range(0, randomColors.Length)] + new Color(m_random, m_random, m_random);
+
+        return m_color;
+    }
 }
