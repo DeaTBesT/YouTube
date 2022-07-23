@@ -6,6 +6,8 @@ public class TextureGenerator : MonoBehaviour
     [SerializeField] private int width = 256;
     [SerializeField] private int height = 256;
 
+    [SerializeField] private FilterMode filterMode;
+
     [SerializeField] private float scale = 20;
 
     [SerializeField] private Color[] randomColors;
@@ -20,6 +22,8 @@ public class TextureGenerator : MonoBehaviour
     private Texture GenerateTexture()
     {
         Texture2D m_texture = new Texture2D(width, height);
+
+        m_texture.filterMode = filterMode;
 
         for (int x = 0; x < width; x++)
         {
@@ -42,8 +46,10 @@ public class TextureGenerator : MonoBehaviour
         float m_noise = Mathf.PerlinNoise(xCoord, yCoord);
 
         float m_random = (Random.value - 0.5f) * m_noise;
-        Color m_color = randomColors[Random.Range(0, randomColors.Length)] + new Color(m_random, m_random, m_random);
 
+        Color m_color = new Color();
+        m_color = randomColors[Random.Range(0, randomColors.Length)] + new Color(m_random, m_random, m_random);
+        
         return m_color;
     }
 }
